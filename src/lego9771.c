@@ -2,7 +2,7 @@
 #include <sys/io.h>
 #include <stdio.h>
 #include <errno.h>
-#define LEGO_9771_IO_PORT 925
+#define LEGO_9771_IO_PORT 0x378 /*925*/
 
 int L9771_init(void)
 {
@@ -34,5 +34,5 @@ void L9771_set(int out_bits)
 }
 int L9771_get(void)
 {
-	inb_p(LEGO_9771_IO_PORT);
+	return inb_p(LEGO_9771_IO_PORT);
 }
