@@ -53,6 +53,7 @@ static int lego9771_init(void)
 static void lego9771_exit(void) 
 {
 	cdev_del(&lego9771_cdev);
+	unregister_chrdev_region(lego9771_dev, 1);
 	release_region(LEGO_9771_IO_PORT, 1);
 	printk(KERN_INFO "lego9771 module being unloaded.\n"); 
 }  
