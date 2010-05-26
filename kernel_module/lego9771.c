@@ -11,6 +11,8 @@
 #include <asm/uaccess.h>
 
 #define LEGO_9771_IO_PORT 925
+#define LEGO9771_INPUT_MASK 0xC0
+#define LEGO9771_OUTPUT_MASK 0x3F
 
 static struct resource* lego9771_port_res = NULL;
 static dev_t lego9771_dev;
@@ -76,6 +78,7 @@ static ssize_t lego9771_read(struct file *filp, char __user *buf, size_t count, 
 static ssize_t lego9771_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
 {
 	unsigned char *kbuf = kmalloc(count, GFP_KERNEL), *ptr;
+	int cur;
 	ssize_t retval = count;
 	if (!kbuf)
 		return -ENOMEM;
@@ -87,7 +90,8 @@ static ssize_t lego9771_write(struct file *filp, const char __user *buf, size_t 
 	{
 		ptr = kbuf;
 		while (count--) {
-			outb(*(ptr++), LEGO_9771_IO_PORT);
+			cur = inb(LEGO_9771_IO_PORT) & LEGO9771_INPUT_MASK;
+			outb((*(ptr++) & LEGO9771_OUTPUT_MASK) | cur, LEGO_9771_IO_PORT);
 			wmb();
 		}
 	}
