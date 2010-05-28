@@ -1,0 +1,63 @@
+Lego9771 driver for Linux
+
+Phil Jordan, phil@philjordan.eu
+
+About
+
+The Lego DACTA 9771 is an ancient ISA board which connects to a console with
+plugs for 4.5V Lego devices - 6 on/off outputs, which double as 3 +/-/off
+outputs (for motors) in groups of 2. There are also 2 digital inputs for
+optical (or other) sensors.
+
+Driving it
+
+The kit came with some fairly useless DOS software and a booklet with some
+printed BASIC source code as an alternative method of driving the hardware.
+The crucial parts of this are IN function calls and OUT statements, which all
+read/write from I/O port 925. Obviously, the original source code itself isn't
+much use on modern OSes, where hardware access must be done from kernel mode;
+so I wrote a Linux driver. The board does not appear to raise any interrupts,
+so the sensors must be polled.
+
+In theory, it should be possible to grab the port from user space using
+ioperm() and read/write with inb()/outb(). This approach seems to segfault,
+at least on OpenSUSE 11.2. (the code is in the userspace/ directory, maybe
+someone can figure out what's wrong) Even if it did work, it would require
+the process to run as root, at least for the ioperm() call. The logical
+conclusion is to use a simple kernel module.
+
+Kernel Module
+
+The source (GPL/BSD license) is in kernel_module/ and should build for the
+running kernel if the headers are linked from /lib/modules/`uname -r`/build
+which is the case on many distros.
+
+It creates a character device on load - currently major/minor numbers are
+dumped to the kernel log, so check  dmesg|tail  and then create the device
+with
+mknod /dev/lego9771 c <major> <minor>
+
+Contribution of a udev script would be much appreciated. :)
+
+
+The Character Device
+
+Once the device is live on /dev/lego9771, it accepts bytewise reads and
+writes. When writing, the low 6 bits of the written byte drive the 6
+correspondingly numbered outputs, and the high 2 bits are ignored. When
+reading, the low 6 bits return the current state of the outputs, whereas
+the high 2 bits represent the states of the sensors connected to ports 6
+and 7.
+
+On the command line,
+dd if=/dev/zero of=/dev/lego9771 bs=1 count=1
+turns off all outputs, whereas
+dd if=/dev/urandom of=/dev/lego9771 bs=1 count=1
+sets the outputs to random states.
+
+To read out the sensor state, try
+dd if=/dev/lego9771 bs=1 count=1 | hexdump -C
+
+For more sophisticated uses, you'll need to write some code.
+
+Have fun!
